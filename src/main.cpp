@@ -1,4 +1,5 @@
 // somehow LED loop leads to MQTT timeouts / reconnects ||| TODO: fix
+// Make Ethernet and MQTT more failure resistant (auto reconnects)
 // Art-Net?
 // OTA?
 

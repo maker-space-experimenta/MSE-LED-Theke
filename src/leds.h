@@ -1,6 +1,6 @@
 #include <Adafruit_NeoPixel.h>
 
-Adafruit_NeoPixel leds = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel leds = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_BRG + NEO_KHZ800);
 
 typedef struct {
     bool state;
@@ -15,6 +15,8 @@ ledState_t curLedState = {
     INIT_COLOR,
     "static"
 };
+
+
 
 
 void applyLedState() {
@@ -61,9 +63,10 @@ void initLeds() {
 }
 
 uint32_t lastLedUpdate = 0;
+uint16_t animationStep = 0;
 
 void loopLeds() {
-    if(millis() - lastLedUpdate > 50) {
+    if(millis() - lastLedUpdate > ANIMATION_SPEED) {
         lastLedUpdate = millis();
         // simple rainbow fade animation
 
@@ -75,20 +78,18 @@ void loopLeds() {
             if(curLedState.effect == "static") {
                 leds.fill(curLedState.color);
                 leds.show();
-            }
-            else if(curLedState.effect = "rainbow") {
-                uint32_t now = millis();
-                for(uint16_t i = 0; i < leds.numPixels(); i++) {
-                    uint16_t timeOffset = (65535UL / 5000) * (now % 5000);
-                    uint16_t ledOffset = (65535UL * i) / (leds.numPixels());
-                    uint16_t hue = (timeOffset + ledOffset) % 65536UL;
-                    //cycle time = 5000ms
-                    leds.setPixelColor(i, leds.ColorHSV(hue));
-                    // if(i == 0) {
-                    //     Serial.println(hue);
-                    // }
+            } else {
+                if(curLedState.effect = "rainbow") {
+                    uint32_t now = millis();
+                    for(uint16_t i = 0; i < leds.numPixels(); i++) {
+                        uint16_t timeOffset = (65535UL / 5000) * (now % 5000);
+                        uint16_t ledOffset = (65535UL * i) / (leds.numPixels());
+                        uint16_t hue = (timeOffset + ledOffset) % 65536UL;
+                        leds.setPixelColor(i, leds.ColorHSV(hue));
+                    }
+                    leds.show();
                 }
-                leds.show();
+                animationStep++;
             }
         }
     }
