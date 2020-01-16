@@ -4,7 +4,7 @@
 
 //14m, 30LEDs/m, 3 LEDs per IC => 140 LEDs
 #define NUM_LEDS    140   
-#define LED_PIN     PA0
+#define LED_PIN     PB4
 #define INIT_STATE  false
 #define INIT_BRIGHTNESS  255
 #define INIT_COLOR  0xFFFFFF
