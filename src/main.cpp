@@ -17,9 +17,9 @@ void setup() {
     DEBUG.begin(115200);
     DEBUG.println("Hello world");    
     
+    initLeds();
     initEthernet();
     initMqtt();
-    initLeds();
 }
 
 void loop() {

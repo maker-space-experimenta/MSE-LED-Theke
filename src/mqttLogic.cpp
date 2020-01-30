@@ -5,6 +5,7 @@
 
 #include "eth.h"
 #include "leds.h"
+#include "ledAnimation.h"
 
 #define DISCOVERY_PREFIX "homeassistant"
 
@@ -15,7 +16,7 @@ void sendAutoDiscovery() {
     DynamicJsonDocument payload(500);
     
     payload["~"] = baseTopic;
-    payload["ret"] = true; //enable retain of messages on MQTT broker
+    payload["ret"] = false; //enable retain of messages on MQTT broker
     payload["name"] = clientStr;
     payload["unique_id"] = clientStr;
     payload["cmd_t"] = "~/set";
@@ -24,10 +25,17 @@ void sendAutoDiscovery() {
     payload["brightness"] = true;
     payload["rgb"] = true;
 
-    payload["effect"] = true;
-    JsonArray fx = payload.createNestedArray("effect_list");
-    fx.add("static");
-    fx.add("rainbow");
+    if(numEffects > 0) {
+        payload["effect"] = true;
+        JsonArray fx = payload.createNestedArray("effect_list");
+        for(uint8_t i = 0; i < numEffects; i++) {
+            fx.add(effectNames[i]);
+        }
+        anim_t *anims = getAnimations();
+        for(uint8_t i = 0; i < getAnimationCount(); i++) {
+            fx.add(anims[i].animName);
+        }
+    } 
 
     // those two options make autodiscovery not work anymore somehow
     // payload["white_value"] = true; // enable for RGBW
@@ -38,7 +46,7 @@ void sendAutoDiscovery() {
 
     String buf;
     serializeJson(payload, buf);
-    mqtt.publish(String(baseTopic + "/config"), buf); 
+    mqtt.publish(String(baseTopic + "/config"), buf, true, 0); // retain = true
 }
 
 void sendLedState() {
@@ -46,7 +54,7 @@ void sendLedState() {
     DynamicJsonDocument payload(500);
     payload["state"] = state.state ? "ON" : "OFF";
     payload["brightness"] = state.brightness;
-    payload["effect"] = state.effect;
+    payload["effect"] = getCurLedEffectName();
     JsonObject c = payload.createNestedObject("color");
     c["r"] = (state.color >> 16) & 0xFF;
     c["g"] = (state.color >> 8) & 0xFF;
@@ -58,7 +66,7 @@ void sendLedState() {
 
     String buf;
     serializeJson(payload, buf);
-    mqtt.publish(String(baseTopic + "/state"), buf); 
+    mqtt.publish(String(baseTopic + "/state"), buf, true, 0); // retain = true
 }
 
 void parseHAssCmd(String &payload) {
@@ -105,6 +113,7 @@ void mqttMessageHandler(String &topic, String &payload) {
     }
 }
 
+bool firstConnect = true;
 void connectMqtt() {
     DEBUG.print("Connecting to broker");
     
@@ -120,6 +129,10 @@ void connectMqtt() {
     }
     DEBUG.println(" done.");
     mqtt.subscribe(baseTopic + "/set");
+
+    if(!firstConnect) {
+        sendLedState();
+    } 
 }
 
 void initMqtt() {
@@ -131,7 +144,11 @@ void initMqtt() {
 
     connectMqtt();
     sendAutoDiscovery();
-    sendLedState();
+    if(firstConnect) {
+        firstConnect = false;
+        delay(1); // somehow homeassistant doesn't recognize the initial state if it's sent too quickly after the config
+        sendLedState();
+    } 
 }
 
 void loopMqtt() {
