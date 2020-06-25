@@ -15,6 +15,6 @@
 
 // #define ARTNET_TIMEOUT 5000 // start idle animation after 5s of Artnet missing
 
-#define BROKER_IP "mse-pi.lan"
+#define BROKER_IP "mse-pi.makerspace.experimenta.science"
 
 #define PROGMEM // discard PROGMEM directive on STM32
